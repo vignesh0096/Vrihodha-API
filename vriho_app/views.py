@@ -22,10 +22,9 @@ class NumberVerify(CreateAPIView):
     permission_classes = [AllowAny]
 
     """ Number registration and OTP generation API"""
-
     def post(self, request, *args, **kwargs):
-        existing = models.NumberVerification.objects.filter(phone_number=request.data['phone_number'])
         try:
+            existing = models.NumberVerification.objects.filter(phone_number=request.data['phone_number']).first()
             if not existing:
                 otp = random.randrange(1000, 9999)
                 data = {'phone_number': request.data['phone_number'],
@@ -66,33 +65,40 @@ class OtpVerification(UpdateAPIView):
     permission_classes = [AllowAny]
 
     """ Number and OTP Verification API"""
-
     def put(self, request, *args, **kwargs):
-        existing = models.NumberVerification.objects.get(phone_number=request.data['phone_number'])
-        if request.data['phone_number'] == existing.phone_number and request.data['otp'] == existing.otp:
-            data = {'phone_number': existing.phone_number,
-                    'otp': existing.otp,
-                    'authorize': True}
-            serializer = OtpVerifiySerializer(instance=existing, data=data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
-            data_response = {
-                'response_code': status.HTTP_200_OK,
-                'message': "otp verified succesfully",
-                'status_flag': True,
-                'status': "success",
-                'error_details': None,
-                'data': {'user': serializer.data},
-            }
-            return Response(data_response)
-        else:
-            data_response = {
-                'response_code': status.HTTP_400_BAD_REQUEST,
-                'message': "otp incorrect",
-                'status_flag': False,
-                'status': "Failed",
-            }
-            return Response(data_response)
+        try:
+            existing = models.NumberVerification.objects.filter(phone_number=request.data['phone_number']).first()
+            if request.data['phone_number'] == existing.phone_number and request.data['otp'] == existing.otp:
+                data = {'phone_number': existing.phone_number,
+                        'otp': existing.otp,
+                        'authorize': True}
+                serializer = OtpVerifiySerializer(instance=existing, data=data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                data_response = {
+                    'response_code': status.HTTP_200_OK,
+                    'message': "otp verified succesfully",
+                    'status_flag': True,
+                    'status': "success",
+                    'error_details': None,
+                    'data': {'user': serializer.data},
+                }
+                return Response(data_response)
+            else:
+                data_response = {
+                    'response_code': status.HTTP_400_BAD_REQUEST,
+                    'message': "otp incorrect",
+                    'status_flag': False,
+                    'status': "Failed",
+                }
+                return Response(data_response)
+        except Exception as e:
+            return Response({'status_code':status.HTTP_500_INTERNAL_SERVER_ERROR,
+                             'message': 'INTERNAL_SERVER_ERROR',
+                             'status_flag': False,
+                             'status': "Failed",
+                             'error_details': str(e),
+                             })
 
 
 class UserRegister(GenericAPIView):
@@ -100,7 +106,6 @@ class UserRegister(GenericAPIView):
     permission_classes = [AllowAny]
 
     """User Registration API"""
-
     def post(self, request, *args, **kwargs):
         try:
             user = models.CustomUser.objects.filter(email=request.data['email']).first()
@@ -145,8 +150,7 @@ class UserLogin(GenericAPIView):
     serializer_class = UserLoginSerializer
     permission_classes = [AllowAny]
 
-    """Admin Login API"""
-
+    """User Login API"""
     def post(self, request, *args, **kwargs):
         try:
             User = get_user_model()
@@ -232,7 +236,6 @@ class UpdateUserDetails(UpdateAPIView):
     permission_classes = [DjangoModelPermissions]
 
     """Update User details API using its id"""
-
     def put(self, request, *args, **kwargs):
         try:
             details = models.CustomUser.objects.get(email=request.data['email'])
