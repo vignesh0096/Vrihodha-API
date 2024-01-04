@@ -14,6 +14,7 @@ from django.contrib.auth.models import Group, Permission,ContentType
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import AllowAny,IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
+import re
 
 
 class NumberVerify(CreateAPIView):
@@ -26,21 +27,26 @@ class NumberVerify(CreateAPIView):
         try:
             existing = models.NumberVerification.objects.filter(phone_number=request.data['phone_number']).first()
             if not existing:
-                otp = random.randrange(1000, 9999)
-                data = {'phone_number': request.data['phone_number'],
-                        'otp': otp}
-                serializer = PhoneNumberSerializer(data=data)
-                serializer.is_valid(raise_exception=True)
-                serializer.save()
-                data_response = {
-                    'response_code': status.HTTP_200_OK,
-                    'message': "Number Registered and otp sent successfully",
-                    'status_flag': True,
-                    'status': "success",
-                    'error_details': None,
-                    'data': {'user': serializer.data},
-                }
-                return Response(data_response)
+                pattern = r"^\d{10}$"
+                if re.match(pattern, str(request.data['phone_number'])):
+                    otp = random.randrange(1000, 9999)
+                    data = {'phone_number': request.data['phone_number'],
+                            'otp': otp}
+                    serializer = PhoneNumberSerializer(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    serializer.save()
+                    data_response = {
+                        'response_code': status.HTTP_200_OK,
+                        'message': "Number Registered and otp sent successfully",
+                        'status_flag': True,
+                        'status': "success",
+                        'error_details': None,
+                        'data': {'user': serializer.data},
+                    }
+                    return Response(data_response)
+                else:
+                    return Response({'status_code': status.HTTP_400_BAD_REQUEST,
+                                     'message': 'number invalid'})
             else:
                 data_response = {
                     'response_code': status.HTTP_400_BAD_REQUEST,
@@ -112,20 +118,25 @@ class UserRegister(GenericAPIView):
             if not user:
                 number_verify = models.NumberVerification.objects.filter(phone_number=request.data['phone_number']).first()
                 if number_verify and number_verify.authorize == 1:
-                    serializer = UserSerializers(data=request.data)
-                    hashed_password = make_password(request.data['password'])
+                    pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                    if re.match(pattern,str(request.data['email'])):
+                        serializer = UserSerializers(data=request.data)
+                        hashed_password = make_password(request.data['password'])
 
-                    if serializer.is_valid():
-                        serializer.validated_data['password'] = hashed_password
-                        serializer.save()
+                        if serializer.is_valid():
+                            serializer.validated_data['password'] = hashed_password
+                            serializer.save()
+                        else:
+                            return Response({'status_code': status.HTTP_400_BAD_REQUEST,
+                                             'message': 'Enter valid credentials'})
                     else:
-                        return Response({'status_code':status.HTTP_404_NOT_FOUND,
-                                         'message': 'Enter valid credentials'})
+                        return Response({'status_code': status.HTTP_400_BAD_REQUEST,
+                                         'message': 'Enter valid email'})
                 else:
-                    return Response({'status_code':status.HTTP_400_BAD_REQUEST,
+                    return Response({'status_code': status.HTTP_400_BAD_REQUEST,
                                      'message': 'verify your number'})
             else:
-                return Response({'status_code':status.HTTP_400_BAD_REQUEST,
+                return Response({'status_code': status.HTTP_400_BAD_REQUEST,
                                  'message': "user exist"})
             data_response = {
                 'response_code': status.HTTP_200_OK,
