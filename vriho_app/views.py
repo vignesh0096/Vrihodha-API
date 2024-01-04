@@ -343,7 +343,6 @@ class ChangeProductRice(UpdateAPIView):
     permission_classes = [DjangoModelPermissions]
 
     """Update Product Rice API"""
-
     def put(self, request, *args, **kwargs):
         try:
             product = models.ProductRice.objects.filter(id=kwargs['id'])
@@ -402,6 +401,7 @@ class GetAllProductRice(ListAPIView):
     serializer_class = ProductRiceSerializer
     permission_classes = [AllowAny]
 
+    """Get all products list API"""
     def list(self, request, **kwargs):
         try:
             queryset = self.get_queryset()
@@ -459,7 +459,6 @@ class AddProductPulse(CreateAPIView):
     permission_classes = [DjangoModelPermissions]
 
     """API for adding pulse products to the product table"""
-
     def post(self, request, *args, **kwargs):
         try:
             product = models.ProductPulses.objects.filter(product_name=request.data['product_name'])
@@ -615,7 +614,6 @@ class AddCompanyDetails(CreateAPIView):
     permission_classes = [DjangoModelPermissions]
 
     """API for adding Company Details"""
-
     def post(self, request, *args, **kwargs):
         try:
             company_details = models.VrihodhaDetails.objects.filter(company_mail=request.data['company_mail']).first()
@@ -652,7 +650,6 @@ class UpdateCompanyDetails(UpdateAPIView):
     permission_classes = [DjangoModelPermissions]
 
     """Update Company details API using its id"""
-
     def put(self, request, *args, **kwargs):
         try:
             details = models.VrihodhaDetails.objects.filter(id=kwargs['id'])
@@ -888,7 +885,7 @@ class PlaceOrderRice(GenericAPIView):
     queryset = models.OrderDetails.objects.all()
     permission_classes = [DjangoModelPermissions]
 
-    """Place order and update Order detals API"""
+    """Place order and update Order details as well as updates the Product Rice Table's Availability API"""
     def post(self, request, *args, **kwargs):
         try:
             user_details = models.CustomUser.objects.filter(email=request.data['email']).first()
@@ -933,7 +930,7 @@ class PlaceOrderPulse(GenericAPIView):
     queryset = models.OrderDetails.objects.all()
     permission_classes = [DjangoModelPermissions]
 
-    """Place order and update Order detals API"""
+    """Place order and update Order details as well as updates the Product Pulses Table's Availability API"""
     def post(self, request, *args, **kwargs):
         try:
             user_details = models.CustomUser.objects.filter(email=request.data['email']).first()
@@ -975,7 +972,7 @@ class PlaceOrderPulse(GenericAPIView):
 class UserOrderList(ListAPIView):
     permission_classes = [AllowAny]
 
-    """Get User Order List API"""
+    """API to Get User Order List using user's email id """
     def list(self, request, **kwargs):
         try:
             user_id = models.CustomUser.objects.filter(email=kwargs['email']).first()
@@ -1005,7 +1002,7 @@ class DeleteUserOrder(DestroyAPIView):
     queryset = models.OrderDetails.objects.all()
     permission_classes = [DjangoModelPermissions]
 
-    """Delete User Order API"""
+    """Delete User Order API using order id"""
     def delete(self, request, *args, **kwargs):
         try:
             order = models.OrderDetails.objects.filter(id=kwargs['order_id']).first()
